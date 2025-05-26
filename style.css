@@ -664,7 +664,7 @@ body {
 .modal-content p {
     margin-bottom: 30px;
     font-size: 1.2em;
-    color: var(--text-color);
+    color: #f6f7f8;
     font-weight: 500;
 }
 
