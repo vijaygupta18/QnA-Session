@@ -955,21 +955,7 @@ body {
     color: var(--text-muted);
 }
 
-.question-card.answered::before {
-    content: '✅ ANSWERED';
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    background: linear-gradient(135deg, var(--success), var(--success-hover));
-    color: var(--text-inverse);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-lg);
-    letter-spacing: 0.05em;
-    box-shadow: var(--shadow-sm);
-    animation: pulse 2s ease-in-out infinite;
-}
+
 
 /* Add a subtle divider before answered questions */
 .question-card.answered:first-of-type {
