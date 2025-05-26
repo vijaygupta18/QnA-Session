@@ -375,7 +375,7 @@ async function joinSession(sessionId) {
             showToast('Session has been ended by the admin.', 'info');
             showLoading(false);
             setTimeout(() => {
-                window.location.href = '/';
+                window.location.href = '/QnA-Session/';
             }, 3000);
             return false;
         }
@@ -445,7 +445,7 @@ function setupSessionListeners() {
             if (!sessionData.active) {
                 showToast('Session has been ended by the admin.', 'info');
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = '/QnA-Session/';
                 }, 3000);
             }
         }

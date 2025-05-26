@@ -7,7 +7,6 @@ A modern, real-time Q&A web application built with Firebase Realtime Database th
 - **Real-time Q&A**: Questions appear instantly for all participants.
 - **Voting System**: Upvote questions to prioritize them.
 - **Secure Access Control**: Three-tier system (Admin, Questioner, Read-Only) using cryptographic hashes for authentication.
-- **Dynamic Passwords**: Session creators set their own password.
 - **Admin Controls**: Session creators can mark questions as answered, delete questions, and end the session.
 - **Auto-expiration**: Sessions automatically expire after 3 hours, becoming read-only.
 - **Mobile-friendly**: Responsive design works seamlessly on all devices.
@@ -16,7 +15,7 @@ A modern, real-time Q&A web application built with Firebase Realtime Database th
 
 ## 🔒 Access Control System
 
-This application implements a three-tier access control system using URL parameters containing cryptographic hashes, generated based on the session ID and the session's password. This provides a secure way to grant different levels of access without exposing the password directly in the URL for non-admin users.
+This application implements a three-tier access control system using URL parameters containing cryptographic hashes, generated based on the session ID. These hashes provide a way to grant different levels of access by enabling or disabling client-side UI elements and functions.
 
 ### 1. 👀 Read-Only Access (Default)
 - **How to get it**: Accessing the session URL without any hash parameters (`?session=YOUR_SESSION_ID`).
@@ -24,7 +23,7 @@ This application implements a three-tier access control system using URL paramet
 - **Limitations**: Cannot post questions, vote, or access any admin controls.
 
 ### 2. ✍️ Question Access
-- **How to get it**: Using a session URL with a valid questioner hash (`?session=YOUR_SESSION_ID&qh=YOUR_QUESTIONER_HASH`) or by having the session password stored locally (e.g., from creating the session).
+- **How to get it**: Using a session URL with a valid questioner hash (`?session=YOUR_SESSION_ID&qh=YOUR_QUESTIONER_HASH`).
 - **Capabilities**: Can post new questions and vote on existing questions.
 - **Limitations**: Cannot see or use admin controls (Mark Answered, Delete, End Session).
 
@@ -40,15 +39,14 @@ This application implements a three-tier access control system using URL paramet
 
 ### Creating a Session
 1. Visit the app homepage.
-2. Enter your desired admin password in the input field.
-3. Click the "✨ Create New Session" button.
-4. You will be redirected to your new session with full admin access. The URL will contain your admin hash.
-5. **Important**: Copy this URL and save it securely. This is your unique admin link for this session.
-6. Share the session link with participants (using the "📋 Share Session" button gives them Question Access).
+2. Click the "✨ Create New Session" button.
+3. You will be redirected to your new session with full admin access. The URL will contain your admin hash.
+4. **Important**: Copy this URL and save it securely. This is your unique admin link for this session.
+5. Share the session link with participants (using the "📋 Share Session" button gives them Question Access).
 
 ### Joining a Session
 1. **With Full Admin Access**: Use the unique admin URL you saved from session creation.
-2. **With Question Access**: Use the link shared by the admin (generated via the "Share Session" button or manually constructed with the `qh` hash or password in URL).
+2. **With Question Access**: Use the link shared by the admin (generated via the "Share Session" button).
 3. **With Read-Only Access**: Simply use the base session URL (e.g., `https://your-app.github.io/?session=YOUR_SESSION_ID`).
 4. Depending on your access level, you can view, ask questions, vote, or manage the session.
 
@@ -56,7 +54,7 @@ This application implements a three-tier access control system using URL paramet
 - **📋 Share Session**: Copies a Question Access link to your clipboard.
 - **✅ Mark as Answered**: Click the button on a question card to mark it as answered.
 - **🗑️ Delete**: Click the button on a question card to permanently remove it.
-- **🛑 End Session**: Click the button in the admin controls area to make the session inactive for all users.
+- **🛑 End Session**: Click the button in the admin controls area to make the session inactive for all users. After ending the session, users will be redirected to the `/QnA-Session/` path.
 
 ## 🛠️ Tech Stack
 
@@ -71,7 +69,7 @@ This application implements a three-tier access control system using URL paramet
 
 1. **Create a Firebase Project**: Go to [Firebase Console](https://console.firebase.google.com/), click "Create a project", and follow the steps.
 
-2. **Enable Realtime Database**: In your Firebase project dashboard, navigate to "Realtime Database" and click "Create Database". Choose a location and start in test mode for now (we will discuss rules next).
+2. **Enable Realtime Database**: In your Firebase project dashboard, navigate to "Realtime Database" and click "Create Database". Choose a location and start in test mode for now.
 
 3. **Get Firebase Configuration**: Go to Project Settings (gear icon), scroll down to "Your apps", click "Add app" (Web), and register your app. Copy the Firebase configuration object.
 
@@ -94,32 +92,11 @@ const firebaseConfig = {
 
 ### 2. Firebase Security Rules
 
-**Implementing robust security rules is CRUCIAL for this application.** The application relies on dynamic session passwords and hash validation done client-side and implicitly through Firebase rules. You need to set up rules in your Firebase Console (Realtime Database → Rules) that validate write operations.
+**Implementing robust security rules is CRUCIAL for this application.** The current `app.js` code performs client-side validation using URL hashes (`ah` and `qh`) to enable or disable UI elements and features based on the user's perceived access level. **However, this client-side validation is NOT sufficient to prevent unauthorized write operations directly to your Firebase Realtime Database if someone bypasses the client-side JavaScript.**
 
-**Concept for Rules:**
+You MUST configure Firebase Security Rules in your Firebase Console (Realtime Database → Rules) to validate all write operations (creating/voting questions, updating session status, deleting questions) and ensure that only authorized requests are allowed to modify your database. Relying solely on the client-side hash validation in `app.js` for security is insecure.
 
-Your rules should allow read access for everyone but restrict write access (creating/voting questions, updating session status) based on validating the password included in the data write against the `password` stored for that specific session ID in the database. This prevents unauthorized writes even if someone guesses a session ID.
-
-**Example (Conceptual - adapt to your security needs!):**
-
-```json
-{
-  "rules": {
-    "sessions": {
-      "$sessionId": {
-        // Read access for everyone
-        ".read": true,
-        // Write access requires the provided password to match the stored password
-        // IMPORTANT: Implement more granular validation based on data structure (questions, active, etc.)
-        // and consider Firebase Authentication for stronger security in production.
-        ".write": "data.child('password').val() == newData.child('password').val()"
-      }
-    }
-  }
-}
-```
-
-- **Strong Recommendation**: For a production application, integrate Firebase Authentication to manage user identities and use those identities in your security rules for more fine-grained and secure access control instead of relying solely on a shared session password.
+**Strong Recommendation**: Implement robust server-side validation using Firebase Security Rules. Consider integrating Firebase Authentication to manage user identities for more fine-grained and secure access control instead of relying solely on URL parameters.
 
 ### 3. GitHub Pages Deployment
 
@@ -144,7 +121,7 @@ Your rules should allow read access for everyone but restrict write access (crea
 - The glassmorphism effect is controlled by the `backdrop-filter` CSS property.
 
 ### Firebase
-- Adjust Firebase Security Rules to match your security requirements. Consider implementing Firebase Authentication for user management.
+- **CRITICAL:** Implement robust Firebase Security Rules to protect your data. The client-side validation in `app.js` is not sufficient.
 - You can extend the Firebase Realtime Database schema in `app.js` to add more features (e.g., user names for questions).
 
 ## ❤️ Contributing
