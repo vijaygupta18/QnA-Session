@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Real-time Q&A Session</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>✨ Real-time Q&A Session</h1>
+            <div class="session-info">
+                <span id="sessionId">🔄 Loading...</span>
+                <span id="sessionStatus" class="status-active">🟢 Active</span>
+            </div>
+        </header>
+
+        <!-- Home Screen (Create Session) -->
+        <div id="homeScreen" class="screen">
+            <div class="welcome-card">
+                <h2>🚀 Welcome to Q&A Sessions</h2>
+                <p>Create a new session or join an existing one to start engaging with your audience</p>
+                
+                <button id="createSessionBtn" class="btn btn-primary">
+                    ✨ Create New Session
+                </button>
+                
+                <div class="create-session-password">
+                    <input type="password" id="createSessionPasswordInput" placeholder="🔐 Enter your admin password" class="input">
+                </div>
+                
+                <div class="join-session">
+                    <p>💫 Or join with a session link</p>
+                    <input type="text" id="joinSessionInput" placeholder="📝 Enter session ID" class="input">
+                    <button id="joinSessionBtn" class="btn btn-secondary">🎯 Join Session</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Screen -->
+        <div id="sessionScreen" class="screen hidden">
+            <!-- Question Form -->
+            <div class="question-form-card">
+                <h3>💭 Ask a Question</h3>
+                <form id="questionForm">
+                    <textarea 
+                        id="questionInput" 
+                        placeholder="What would you like to ask? Share your thoughts..." 
+                        rows="4" 
+                        maxlength="500"
+                        class="textarea"
+                        required
+                    ></textarea>
+                    <div class="form-footer">
+                        <span id="charCount" class="char-count">0/500</span>
+                        <button type="submit" id="submitBtn" class="btn btn-primary">
+                            🚀 Ask Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Session Controls (Admin Only) -->
+            <div id="adminControls" class="admin-controls hidden">
+                <h4>🔧 Admin Controls</h4>
+                <button id="shareSessionBtn" class="btn btn-secondary">📋 Share Session</button>
+                <button id="endSessionBtn" class="btn btn-danger">🛑 End Session</button>
+            </div>
+
+            <!-- Questions List -->
+            <div class="questions-section">
+                <div class="questions-header">
+                    <h3>💬 Questions</h3>
+                    <div class="sort-info">
+                        <span>📊 Sorted by votes</span>
+                    </div>
+                </div>
+                <div id="questionsList" class="questions-list">
+                    <div class="no-questions">
+                        <p>🤔 No questions yet. Be the first to ask something amazing!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Expired Screen -->
+        <div id="expiredScreen" class="screen hidden">
+            <div class="expired-card">
+                <h2>⏰ Session Expired</h2>
+                <p>This session has been active for more than 3 hours and is now read-only. All questions and votes are preserved for viewing.</p>
+                <button id="createNewSessionBtn" class="btn btn-primary">
+                    ✨ Create New Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>✨ Loading your amazing Q&A session...</p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="app.js"></script>
+</body>
+</html> 
