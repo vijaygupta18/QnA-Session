@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -24,18 +26,21 @@
             <div class="welcome-card">
                 <h2>🚀 Welcome to Q&A Sessions</h2>
                 <p>Create a new session or join an existing one to start engaging with your audience</p>
-                
+
+                <div class="create-session-password">
+                    <input type="password" id="createSessionPasswordInput" placeholder="🔐 Enter your admin password"
+                        class="input">
+                </div>
                 <button id="createSessionBtn" class="btn btn-primary">
                     ✨ Create New Session
                 </button>
-                
-                <div class="create-session-password">
-                    <input type="password" id="createSessionPasswordInput" placeholder="🔐 Enter your admin password" class="input">
-                </div>
-                
+                <br>
+
                 <div class="join-session">
                     <p>💫 Or join with a session link</p>
-                    <input type="text" id="joinSessionInput" placeholder="📝 Enter session ID" class="input">
+                    <input type="text" id="joinSessionInput" placeholder="📝 Enter session ID or paste session URL"
+                        class="input">
+                    <br> <br>
                     <button id="joinSessionBtn" class="btn btn-secondary">🎯 Join Session</button>
                 </div>
             </div>
@@ -47,14 +52,8 @@
             <div class="question-form-card">
                 <h3>💭 Ask a Question</h3>
                 <form id="questionForm">
-                    <textarea 
-                        id="questionInput" 
-                        placeholder="What would you like to ask? Share your thoughts..." 
-                        rows="4" 
-                        maxlength="500"
-                        class="textarea"
-                        required
-                    ></textarea>
+                    <textarea id="questionInput" placeholder="What would you like to ask? Share your thoughts..."
+                        rows="4" maxlength="500" class="textarea" required></textarea>
                     <div class="form-footer">
                         <span id="charCount" class="char-count">0/500</span>
                         <button type="submit" id="submitBtn" class="btn btn-primary">
@@ -91,7 +90,8 @@
         <div id="expiredScreen" class="screen hidden">
             <div class="expired-card">
                 <h2>⏰ Session Expired</h2>
-                <p>This session has been active for more than 3 hours and is now read-only. All questions and votes are preserved for viewing.</p>
+                <p>This session has been active for more than 3 hours and is now read-only. All questions and votes are
+                    preserved for viewing.</p>
                 <button id="createNewSessionBtn" class="btn btn-primary">
                     ✨ Create New Session
                 </button>
@@ -122,4 +122,5 @@
     <!-- Firebase SDK -->
     <script type="module" src="app.js"></script>
 </body>
-</html> 
+
+</html>

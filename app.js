@@ -79,6 +79,46 @@ function generateSessionId() {
         Math.random().toString(36).substring(2, 15);
 }
 
+// Helper function to extract session ID from URL or return the input if it's already a session ID
+function extractSessionId(input) {
+    // Clean up the input
+    input = input.trim();
+
+    // If input looks like a URL, extract the session parameter
+    if (input.includes('://') || input.includes('?session=')) {
+        try {
+            // Handle both full URLs and query strings
+            let url;
+            if (input.includes('://')) {
+                url = new URL(input);
+            } else {
+                // If it's just a query string, create a dummy URL
+                url = new URL('http://dummy.com' + (input.startsWith('?') ? input : '?' + input));
+            }
+            const sessionId = url.searchParams.get('session');
+
+            // Validate the extracted session ID
+            if (sessionId && sessionId.length > 0 && !sessionId.includes('/')) {
+                return sessionId;
+            } else {
+                console.warn('⚠️ Invalid session ID extracted from URL:', sessionId);
+                return input; // Return original input as fallback
+            }
+        } catch (error) {
+            console.warn('❌ Failed to parse URL, using input as-is:', error);
+            return input;
+        }
+    }
+
+    // If it doesn't look like a URL, validate it as a session ID
+    if (input.length > 0 && !input.includes('/') && !input.includes('?') && !input.includes('#')) {
+        return input;
+    }
+
+    console.warn('⚠️ Input format not recognized, using as-is:', input);
+    return input;
+}
+
 // Custom confirmation function
 function showConfirmation(message, onConfirm) {
     elements.modalMessage.textContent = message;
@@ -816,11 +856,12 @@ function shareSession() {
 elements.createSessionBtn.addEventListener('click', createSession);
 
 elements.joinSessionBtn.addEventListener('click', () => {
-    const sessionId = elements.joinSessionInput.value.trim();
-    if (sessionId) {
+    const input = elements.joinSessionInput.value.trim();
+    if (input) {
+        const sessionId = extractSessionId(input);
         joinSession(sessionId);
     } else {
-        showToast('Please enter a session ID.', 'error');
+        showToast('Please enter a session ID or session URL.', 'error');
     }
 });
 
