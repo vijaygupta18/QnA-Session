@@ -756,10 +756,17 @@ function renderQuestions(questionsData) {
         return;
     }
 
-    // Convert to array and sort by votes (descending)
+    // Convert to array and sort: unanswered questions by votes (descending), then answered questions by votes (descending)
     const questionsArray = Object.entries(questionsData)
         .map(([id, data]) => ({ id, ...data }))
-        .sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        .sort((a, b) => {
+            // First, separate answered and unanswered questions
+            if (a.answered && !b.answered) return 1; // a is answered, b is not - put a after b
+            if (!a.answered && b.answered) return -1; // a is not answered, b is - put a before b
+            
+            // If both have same answered status, sort by votes (descending)
+            return (b.votes || 0) - (a.votes || 0);
+        });
 
     questionsList.innerHTML = questionsArray.map(question => {
         const hasVoted = hasUserVoted(question.id);
