@@ -208,7 +208,7 @@ body {
 
 /* Enhanced Header */
 .header {
-    background: var(--bg-primary);
+    background: var(--bg-tertiary);
     border-radius: var(--radius-xl);
     padding: var(--space-8);
     margin-bottom: var(--space-8);

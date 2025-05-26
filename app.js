@@ -52,7 +52,6 @@ const elements = {
     sessionId: document.getElementById('sessionId'),
     sessionStatus: document.getElementById('sessionStatus'),
     createSessionBtn: document.getElementById('createSessionBtn'),
-    createSessionPasswordInput: document.getElementById('createSessionPasswordInput'),
     joinSessionInput: document.getElementById('joinSessionInput'),
     joinSessionBtn: document.getElementById('joinSessionBtn'),
     questionForm: document.getElementById('questionForm'),
@@ -60,6 +59,7 @@ const elements = {
     charCount: document.getElementById('charCount'),
     submitBtn: document.getElementById('submitBtn'),
     adminControls: document.getElementById('adminControls'),
+    adminControlsTitle: document.getElementById('adminControlsTitle'),
     shareSessionBtn: document.getElementById('shareSessionBtn'),
     endSessionBtn: document.getElementById('endSessionBtn'),
     questionsList: document.getElementById('questionsList'),
@@ -230,9 +230,9 @@ function saveUserVotes(votes) {
 }
 
 // Admin authentication functions
-function generateAdminHash(sessionId, password) {
-    // Create a hash based on session ID and password
-    const combined = `${sessionId}:${password}:admin`;
+function generateAdminHash(sessionId) {
+    // Create a hash based on session ID
+    const combined = `${sessionId}:admin`;
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
         const char = combined.charCodeAt(i);
@@ -243,9 +243,9 @@ function generateAdminHash(sessionId, password) {
     return Math.abs(hash).toString(16).padStart(8, '0');
 }
 
-function generateQuestionerHash(sessionId, password) {
+function generateQuestionerHash(sessionId) {
     // Create a different hash for question posting access
-    const combined = `${sessionId}:${password}:questioner`;
+    const combined = `${sessionId}:questioner`;
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
         const char = combined.charCodeAt(i);
@@ -256,13 +256,13 @@ function generateQuestionerHash(sessionId, password) {
     return 'q' + Math.abs(hash).toString(16).padStart(7, '0');
 }
 
-function validateAdminHash(sessionId, password, hash) {
-    const expectedHash = generateAdminHash(sessionId, password);
+function validateAdminHash(sessionId, hash) {
+    const expectedHash = generateAdminHash(sessionId);
     return hash === expectedHash;
 }
 
-function validateQuestionerHash(sessionId, password, hash) {
-    const expectedHash = generateQuestionerHash(sessionId, password);
+function validateQuestionerHash(sessionId, hash) {
+    const expectedHash = generateQuestionerHash(sessionId);
     return hash === expectedHash;
 }
 
@@ -271,43 +271,19 @@ function getUserAccessLevel() {
     const adminHash = urlParams.get('ah'); // admin hash
     const questionerHash = urlParams.get('qh'); // questioner hash
 
-
-
-
     if (!currentSessionId) {
-
         return 'none';
     }
 
-    const sessionPassword = getSessionPassword(currentSessionId);
-
-
-    if (!sessionPassword) {
-
-        return 'read';
-    }
-
     // Check admin access first
-    if (adminHash && validateAdminHash(currentSessionId, sessionPassword, adminHash)) {
-
+    if (adminHash && validateAdminHash(currentSessionId, adminHash)) {
         return 'admin';
     }
 
     // Check questioner access
-    if (questionerHash && validateQuestionerHash(currentSessionId, sessionPassword, questionerHash)) {
-
+    if (questionerHash && validateQuestionerHash(currentSessionId, questionerHash)) {
         return 'questioner';
     }
-
-    // Check if user has password for write access
-    const userPassword = getStoredPassword();
-
-
-    if (userPassword && userPassword === sessionPassword) {
-
-        return 'questioner';
-    }
-
 
     return 'read';
 }
@@ -319,44 +295,6 @@ function isValidAdmin() {
 function canPostQuestions() {
     const accessLevel = getUserAccessLevel();
     return accessLevel === 'admin' || accessLevel === 'questioner';
-}
-
-// Password management functions
-function storePassword(password) {
-    localStorage.setItem('qaSessionPassword', password);
-}
-
-function getStoredPassword() {
-    return localStorage.getItem('qaSessionPassword');
-}
-
-function storeSessionPassword(sessionId, password) {
-    const sessionPasswords = JSON.parse(localStorage.getItem('sessionPasswords') || '{}');
-    sessionPasswords[sessionId] = password;
-    localStorage.setItem('sessionPasswords', JSON.stringify(sessionPasswords));
-}
-
-function getSessionPassword(sessionId) {
-    const sessionPasswords = JSON.parse(localStorage.getItem('sessionPasswords') || '{}');
-    return sessionPasswords[sessionId];
-}
-
-function hasValidPassword() {
-    const password = getStoredPassword();
-    const sessionPassword = getSessionPassword(currentSessionId);
-
-    // Check if current password matches the session's password
-    return password && sessionPassword && password === sessionPassword;
-}
-
-function checkPasswordFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlPassword = urlParams.get('password');
-    if (urlPassword) {
-        storePassword(urlPassword);
-        return true;
-    }
-    return false;
 }
 
 function disableInteractions() {
@@ -382,37 +320,23 @@ function disableInteractions() {
 
 // Session management
 async function createSession() {
-    const passwordInput = elements.createSessionPasswordInput.value.trim();
-
-    if (!passwordInput) {
-        showToast('Please enter an admin password to create a session.', 'error');
-        return;
-    }
-
-    // Store the password for this session
-    storePassword(passwordInput);
-
     showLoading(true);
 
     try {
         const sessionId = generateSessionId();
         const sessionRef = ref(database, `sessions/${sessionId}`);
 
-        // Store session password for future validation
-        storeSessionPassword(sessionId, passwordInput);
-
         await set(sessionRef, {
             createdAt: serverTimestamp(),
             active: true,
-            questionCount: 0,
-            password: passwordInput // Include password in session data for Firebase rules
+            questionCount: 0
         });
 
         // Generate admin hash for secure admin authentication
-        const adminHash = generateAdminHash(sessionId, passwordInput);
+        const adminHash = generateAdminHash(sessionId);
 
         // Redirect to session with admin privileges using secure hash
-        window.location.href = `?session=${sessionId}&ah=${adminHash}&password=${passwordInput}`;
+        window.location.href = `?session=${sessionId}&ah=${adminHash}`;
 
     } catch (error) {
         console.error('Error creating session:', error);
@@ -422,36 +346,21 @@ async function createSession() {
 }
 
 async function joinSession(sessionId) {
-
-
-    // Check for password in URL and store it
-    checkPasswordFromUrl();
-
     showLoading(true);
 
     try {
         const sessionRef = ref(database, `sessions/${sessionId}`);
-
         const snapshot = await get(sessionRef);
-
 
         if (!snapshot.exists()) {
             showToast('Session not found. Please check the session ID.', 'error');
-
             showLoading(false);
             return false;
         }
 
         const sessionData = snapshot.val();
 
-
-        // Store the session's password for validation
-        if (sessionData.password) {
-            storeSessionPassword(sessionId, sessionData.password);
-        }
-
         if (sessionData.createdAt && isSessionExpired(sessionData.createdAt)) {
-
             sessionExpired = true;
             elements.sessionStatus.textContent = 'Expired';
             elements.sessionStatus.className = 'status-expired';
@@ -464,7 +373,6 @@ async function joinSession(sessionId) {
         // Check if session is inactive (ended by admin)
         if (sessionData.active === false) {
             showToast('Session has been ended by the admin.', 'info');
-
             showLoading(false);
             setTimeout(() => {
                 window.location.href = '/';
@@ -475,29 +383,22 @@ async function joinSession(sessionId) {
         currentSessionId = sessionId;
         elements.sessionId.textContent = `Session: ${sessionId}`;
 
-
         // Get user access level
         const accessLevel = getUserAccessLevel();
 
-
-
         // Show admin controls based on access level
         if (accessLevel === 'admin') {
-            // Full admin: show both share and end session buttons
             elements.adminControls.classList.remove('hidden');
             elements.shareSessionBtn.style.display = 'block';
             elements.endSessionBtn.style.display = 'block';
-
         } else if (accessLevel === 'questioner') {
-            // Questioner: show only share session button
             elements.adminControls.classList.remove('hidden');
             elements.shareSessionBtn.style.display = 'block';
             elements.endSessionBtn.style.display = 'none';
+            elements.adminControlsTitle.innerText = 'Controls';
 
         } else {
-            // Read-only: hide all admin controls
             elements.adminControls.classList.add('hidden');
-
         }
 
         // Show access status based on access level
@@ -505,7 +406,6 @@ async function joinSession(sessionId) {
             case 'admin':
                 break;
             case 'questioner':
-                // showToast('✍️ Question access enabled! You can ask questions and vote.', 'success');
                 break;
             case 'read':
                 showToast('👀 Read-only access. Contact session admin for question access.', 'info');
@@ -517,7 +417,6 @@ async function joinSession(sessionId) {
         showScreen('session');
         setupSessionListeners();
         showLoading(false);
-
 
         return true;
 
@@ -559,17 +458,6 @@ function setupSessionListeners() {
     });
 }
 
-// function disableInteractions() {
-//     elements.submitBtn.disabled = true;
-//     elements.questionInput.disabled = true;
-//     elements.submitBtn.textContent = '⏰ Session Expired';
-
-//     // Disable all vote buttons
-//     document.querySelectorAll('.vote-btn').forEach(btn => {
-//         btn.disabled = true;
-//     });
-// }
-
 // Question management
 async function submitQuestion(questionText) {
     if (sessionExpired) {
@@ -591,8 +479,7 @@ async function submitQuestion(questionText) {
             votes: 0,
             answered: false,
             timestamp: serverTimestamp(),
-            voters: {},
-            password: getStoredPassword() // Include password for validation
+            voters: {}
         });
 
         // Update question count
@@ -601,8 +488,7 @@ async function submitQuestion(questionText) {
         const sessionData = snapshot.val();
 
         await update(sessionRef, {
-            questionCount: (sessionData.questionCount || 0) + 1,
-            password: getStoredPassword() // Include password for validation
+            questionCount: (sessionData.questionCount || 0) + 1
         });
 
         elements.questionInput.value = '';
@@ -649,8 +535,7 @@ async function voteQuestion(questionId, increment = true) {
         const voterKey = `voter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         const updates = {
-            votes: newVoteCount,
-            password: getStoredPassword() // Include password for validation
+            votes: newVoteCount
         };
 
         if (increment) {
@@ -685,8 +570,7 @@ async function markAnswered(questionId) {
     try {
         const questionRef = ref(database, `sessions/${currentSessionId}/questions/${questionId}`);
         await update(questionRef, {
-            answered: true,
-            password: getStoredPassword() // Include password for validation
+            answered: true
         });
         showToast('✅ Question marked as answered!', 'success');
     } catch (error) {
@@ -729,8 +613,7 @@ async function endSession() {
                 const sessionRef = ref(database, `sessions/${currentSessionId}`);
                 update(sessionRef, {
                     active: false,
-                    endedAt: serverTimestamp(),
-                    password: getStoredPassword() // Include password for validation
+                    endedAt: serverTimestamp()
                 });
                 showToast('🛑 Session ended successfully!', 'success');
                 setTimeout(() => {
@@ -841,16 +724,10 @@ function updateCharCount() {
 
 function shareSession() {
     const baseUrl = window.location.origin + window.location.pathname;
-    const password = getStoredPassword();
-
-    if (!password) {
-        showToast('❌ No password available to share.', 'error');
-        return;
-    }
 
     // Always share question-posting access (not admin, not read-only)
-    const questionerHash = generateQuestionerHash(currentSessionId, password);
-    const shareUrl = `${baseUrl}?session=${currentSessionId}&qh=${questionerHash}&password=${password}`;
+    const questionerHash = generateQuestionerHash(currentSessionId);
+    const shareUrl = `${baseUrl}?session=${currentSessionId}&qh=${questionerHash}`;
 
     navigator.clipboard.writeText(shareUrl).then(() => {
         showToast('✍️ Question access link copied! Recipients can ask questions and vote.', 'success');
@@ -899,21 +776,17 @@ window.deleteQuestion = deleteQuestion;
 
 // Initialize app
 function initApp() {
-
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session');
 
     if (sessionId) {
-
         joinSession(sessionId);
     } else {
-
         showScreen('home');
         showLoading(false);
     }
 
     updateCharCount();
-
 }
 
 // Cleanup on page unload
