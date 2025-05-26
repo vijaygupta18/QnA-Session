@@ -151,6 +151,14 @@ body {
     overflow-x: hidden;
 }
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #223f7e 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+}
+
 /* Enhanced Container with Increased Width */
 .container {
     max-width: 60%;
@@ -326,7 +334,7 @@ body {
 .expired-card,
 .admin-controls,
 .questions-section {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgb(249, 249, 249) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-2xl);
