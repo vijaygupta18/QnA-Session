@@ -617,7 +617,7 @@ async function endSession() {
                 });
                 showToast('🛑 Session ended successfully!', 'success');
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = '/QnA-Session/';
                 }, 2000);
             } catch (error) {
                 console.error('Error ending session:', error);
