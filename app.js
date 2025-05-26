@@ -1,5 +1,3 @@
-
-
 // Firebase imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
 // Import the database module as a namespace
@@ -67,13 +65,55 @@ const elements = {
     questionsList: document.getElementById('questionsList'),
     toast: document.getElementById('toast'),
     loadingOverlay: document.getElementById('loadingOverlay'),
-    createNewSessionBtn: document.getElementById('createNewSessionBtn')
+    createNewSessionBtn: document.getElementById('createNewSessionBtn'),
+    // Custom modal elements
+    confirmationModal: document.getElementById('confirmationModal'),
+    modalMessage: document.getElementById('modalMessage'),
+    confirmBtn: document.getElementById('confirmBtn'),
+    cancelBtn: document.getElementById('cancelBtn')
 };
 
 // Utility functions
 function generateSessionId() {
     return Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15);
+}
+
+// Custom confirmation function
+function showConfirmation(message, onConfirm) {
+    elements.modalMessage.textContent = message;
+    elements.confirmationModal.classList.remove('hidden'); // Ensure display is block for transition
+    // Force reflow to allow transition to work
+    void elements.confirmationModal.offsetWidth;
+    elements.confirmationModal.classList.add('show');
+
+    const handleConfirm = () => {
+        elements.confirmationModal.classList.remove('show');
+        // Use a timeout to hide completely after transition
+        setTimeout(() => { elements.confirmationModal.classList.add('hidden'); }, 300);
+        elements.confirmBtn.removeEventListener('click', handleConfirm);
+        elements.cancelBtn.removeEventListener('click', handleCancel);
+        onConfirm(true);
+    };
+
+    const handleCancel = () => {
+        elements.confirmationModal.classList.remove('show');
+        // Use a timeout to hide completely after transition
+        setTimeout(() => { elements.confirmationModal.classList.add('hidden'); }, 300);
+        elements.confirmBtn.removeEventListener('click', handleConfirm);
+        elements.cancelBtn.removeEventListener('click', handleCancel);
+        onConfirm(false);
+    };
+
+    elements.confirmBtn.addEventListener('click', handleConfirm);
+    elements.cancelBtn.addEventListener('click', handleCancel);
+
+    // Close modal if clicking outside modal content
+    elements.confirmationModal.addEventListener('click', (e) => {
+        if (e.target === elements.confirmationModal) {
+            handleCancel(); // Treat click outside as cancel
+        }
+    });
 }
 
 function showToast(message, type = 'info') {
@@ -621,16 +661,19 @@ async function deleteQuestion(questionId) {
         return;
     }
 
-    if (confirm('Are you sure you want to delete this question?')) {
-        try {
-            const questionRef = ref(database, `sessions/${currentSessionId}/questions/${questionId}`);
-            await remove(questionRef);
-            showToast('🗑️ Question deleted!', 'success');
-        } catch (error) {
-            console.error('Error deleting question:', error);
-            showToast('Failed to delete question.', 'error');
+    // Use custom confirmation modal
+    showConfirmation('Are you sure you want to delete this question?', (confirmed) => {
+        if (confirmed) {
+            try {
+                const questionRef = ref(database, `sessions/${currentSessionId}/questions/${questionId}`);
+                remove(questionRef);
+                showToast('🗑️ Question deleted!', 'success');
+            } catch (error) {
+                console.error('Error deleting question:', error);
+                showToast('Failed to delete question.', 'error');
+            }
         }
-    }
+    });
 }
 
 async function endSession() {
@@ -639,23 +682,26 @@ async function endSession() {
         return;
     }
 
-    if (confirm('Are you sure you want to end this session? This action cannot be undone.')) {
-        try {
-            const sessionRef = ref(database, `sessions/${currentSessionId}`);
-            await update(sessionRef, {
-                active: false,
-                endedAt: serverTimestamp(),
-                password: getStoredPassword() // Include password for validation
-            });
-            showToast('🛑 Session ended successfully!', 'success');
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
-        } catch (error) {
-            console.error('Error ending session:', error);
-            showToast('Failed to end session.', 'error');
+    // Use custom confirmation modal
+    showConfirmation('Are you sure you want to end this session? This action cannot be undone.', (confirmed) => {
+        if (confirmed) {
+            try {
+                const sessionRef = ref(database, `sessions/${currentSessionId}`);
+                update(sessionRef, {
+                    active: false,
+                    endedAt: serverTimestamp(),
+                    password: getStoredPassword() // Include password for validation
+                });
+                showToast('🛑 Session ended successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } catch (error) {
+                console.error('Error ending session:', error);
+                showToast('Failed to end session.', 'error');
+            }
         }
-    }
+    });
 }
 
 function renderQuestions(questionsData) {
